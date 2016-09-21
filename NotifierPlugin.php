@@ -7,6 +7,11 @@ class NotifierPlugin extends BasePlugin
     {
         require CRAFT_PLUGINS_PATH .'/notifier/vendor/autoload.php';
         parent::init();
+
+        // Register to onLoadPlugins Event for Exception Handling
+        craft()->plugins->onLoadPlugins = function () {
+            craft()->notifier->registerErrorHandler();
+        };
     }
 
     function getName()
@@ -34,7 +39,9 @@ class NotifierPlugin extends BasePlugin
         return array(
             'defaultNotifier'     => array(AttributeType::String),
             'airbrakeApiEndpoint' => array(AttributeType::String),
-            'airbrakeApiKey'      => array(AttributeType::String)
+            'airbrakeApiKey'      => array(AttributeType::String),
+            'airbrakeProjectId' => array(AttributeType::String),
+            'airbrakeProjectKey' => array(AttributeType::String)
         );
     }
 
