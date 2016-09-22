@@ -48,7 +48,7 @@ class NotifierService extends BaseApplicationComponent
         // Throw an Exception
         try
         {
-            throw new Exception($errorMessage);
+            throw new \Airbrake\Exception($errorMessage);
         }
         catch(Exception $e)
         {
