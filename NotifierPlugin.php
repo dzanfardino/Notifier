@@ -8,10 +8,11 @@ class NotifierPlugin extends BasePlugin
         require CRAFT_PLUGINS_PATH .'/notifier/vendor/autoload.php';
         parent::init();
 
-        // Register to onLoadPlugins Event for Exception Handling
-        craft()->plugins->onLoadPlugins = function () {
+        if (craft()->request->isSiteRequest())
+        {
             craft()->notifier->registerErrorHandler();
-        };
+        }
+
     }
 
     function getName()
@@ -21,12 +22,12 @@ class NotifierPlugin extends BasePlugin
 
     function getVersion()
     {
-        return '1.0';
+        return '1.1';
     }
 
     function getDeveloper()
     {
-        return 'Paramore | The digital agency';
+        return 'Paramore | The digital agency + Electric Putty Digital';
     }
 
     function getDeveloperUrl()

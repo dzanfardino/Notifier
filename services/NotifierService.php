@@ -5,7 +5,7 @@ use Airbrake\Notifier;
 use Airbrake\Instance;
 use Airbrake\ErrorHandler;
 
-class NotifierService extends BaseApplicationComponent
+class NotifierService extends BaseApplicationComponent implements \Twig_Extension_GlobalsInterface
 {
     static protected $settings;
     static protected $notifier;
@@ -14,45 +14,48 @@ class NotifierService extends BaseApplicationComponent
     {
         self::$settings = (is_null($settings)) ? craft()->plugins->getPlugin('Notifier')->getSettings() : $settings;
 
-        // Create new Notifier instance.
-        self::$notifier = new Notifier(array(
-            'host' => self::$settings->airbrakeApiEndpoint,
-            'apiKey' => self::$settings->airbrakeApiKey,
-            'projectId' => self::$settings->airbrakeProjectId,
-            'projectKey' => self::$settings->airbrakeProjectKey,
-            'environment' => craft()->config->get('devMode') ? 'dev' : 'production'
-        ));
+        if (isset(self::$settings) && !is_null(self::$settings->airbrakeApiEndpoint) && !is_null(self::$settings->airbrakeApiKey) && !is_null(self::$settings->airbrakeProjectId) && !is_null(self::$settings->airbrakeProjectKey))
+        {
+            // Create new Notifier instance.
+            self::$notifier = new Notifier(array(
+                'host' => self::$settings->airbrakeApiEndpoint,
+                'apiKey' => self::$settings->airbrakeApiKey,
+                'projectId' => self::$settings->airbrakeProjectId,
+                'projectKey' => self::$settings->airbrakeProjectKey,
+                'environment' => craft()->config->get('devMode') ? 'dev' : 'production'
+            ));
+        }
     }
 
+    /**
+     *
+     */
     public function registerErrorHandler()
     {
         // Set global notifier instance.
-        Instance::set(self::$notifier);
+        if (isset(self::$notifier))
+        {
+            Instance::set(self::$notifier);
+            // Register error and exception handlers.
+            $handler = new ErrorHandler(self::$notifier);
 
-        // Register error and exception handlers.
-        $handler = new ErrorHandler(self::$notifier);
-        // @todo: Add filters to ignore certains exceptions
-//        self::$notifier->addFilter(function ($notice) {
-//            if ($notice['errors'][0]['type'] == 'MyExceptionClass') {
-//                // Ignore this exception.
-//                return null;
-//            }
-//            return $notice;
-//        });
-
-        $handler->register();
+            $handler->register();
+            Craft::log('Error Handler registered successfully.', LogLevel::Info, false, 'notifier');
+        }
+        else
+        {
+            Craft::log('Notifier Instance not set. Error Handler not registered.', LogLevel::Warning, false, 'notifier');
+        }
     }
 
+    /**
+     * @param $errorMessage
+     */
     public function sendString($errorMessage)
     {
-        // Throw an Exception
-        try
+        if (isset(self::$notifier))
         {
-            throw new \Airbrake\Exception($errorMessage);
-        }
-        catch(Exception $e)
-        {
-            Instance::notify($e);
+            self::$notifier->notify(new \Airbrake\Exception($errorMessage));
         }
     }
 }
